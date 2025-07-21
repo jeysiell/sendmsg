@@ -1,0 +1,45 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+.pnpm-debug.log
+
+# Puppeteer: ignora Chromium baixado localmente
+**/.local-chromium/
+
+# VS Code
+.vscode/
+
+# Ambiente
+.env
+.env.*
+
+# Logs
+logs
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de build
+dist/
+build/
+
+# Cache de ferramentas
+.cache/
+.next/
+out/
+
+# Testes
+coverage/
+*.lcov
+
+# Git
+.git/
