@@ -2,6 +2,12 @@ const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, Disconne
 const { Boom } = require('@hapi/boom');
 const fs = require('fs');
 
+const { initSocket } = require('./sendMessage'); // certifique-se do caminho correto
+
+// dentro de startSock()
+initSocket(sock); // passa o socket para o módulo de envio
+
+
 async function startSock() {
     const { state, saveCreds } = await useMultiFileAuthState('baileys_auth');
 

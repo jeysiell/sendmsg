@@ -1,14 +1,21 @@
-// whatsapp/sendMessage.js
-const client = require('../whatsapp');
+let sock; // o socket será definido dinamicamente
+
+function initSocket(socketInstance) {
+    sock = socketInstance;
+}
 
 async function sendWhatsAppMessage(phoneNumber, message) {
     try {
-        if(!phoneNumber.startsWith('55')) {
-            phoneNumber = '55' + phoneNumber; // Prefixo do Brasil
+        if (!sock) throw new Error("Cliente WhatsApp ainda não conectado.");
+
+        if (!phoneNumber.startsWith('55')) {
+            phoneNumber = '55' + phoneNumber;
         }
-        
-        const chatId = `${phoneNumber}@c.us`;
-        await client.sendMessage(chatId, message);
+
+        const jid = `${phoneNumber}@s.whatsapp.net`;
+
+        await sock.sendMessage(jid, { text: message });
+
         return { success: true };
     } catch (error) {
         console.error('Erro ao enviar mensagem:', error);
@@ -16,4 +23,4 @@ async function sendWhatsAppMessage(phoneNumber, message) {
     }
 }
 
-module.exports = { sendWhatsAppMessage };
+module.exports = { sendWhatsAppMessage, initSocket };
