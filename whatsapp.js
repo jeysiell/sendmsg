@@ -1,32 +1,59 @@
-// whatsapp/whatsapp.js
+const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = require('@whiskeysockets/baileys');
+const { Boom } = require('@hapi/boom');
 const fs = require('fs');
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
 
-const client = new Client({
-    authStrategy: new LocalAuth({
-        // Opcional: define uma pasta onde a sessão será salva
-        clientId: 'cliente1' // pode usar outro nome se quiser múltiplas sessões
-    }),
-    puppeteer: {
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    }
-});
+async function startSock() {
+    const { state, saveCreds } = await useMultiFileAuthState('baileys_auth');
 
-client.on('qr', (qr) => {
-    qrcode.generate(qr, { small: true });
-    console.log('Escaneie o QR Code para conectar ao WhatsApp');
-});
+    const { version } = await fetchLatestBaileysVersion();
+    const sock = makeWASocket({
+        version,
+        auth: state,
+        printQRInTerminal: true, // Exibe QR no terminal se necessário
+        generateHighQualityLinkPreview: true
+    });
 
-client.on('ready', () => {
-    console.log('✅ Client conectado!');
-});
+    // Evento de conexão
+    sock.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect, isNewLogin } = update;
 
-client.on('disconnected', (reason) => {
-    console.log('⚠️ Cliente desconectado!', reason);
-});
+        if (connection === 'close') {
+            const shouldReconnect =
+                lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
 
-client.initialize();
+            console.log('📴 Conexão encerrada. Reconectando?', shouldReconnect);
 
-module.exports = client;
+            if (shouldReconnect) {
+                startSock();
+            } else {
+                console.log('🔒 Sessão finalizada. Exclua a pasta "baileys_auth" para novo login.');
+            }
+        }
+
+        if (connection === 'open') {
+            console.log('✅ Conectado ao WhatsApp!');
+        }
+    });
+
+    // Evento de mensagem recebida
+    sock.ev.on('messages.upsert', (msg) => {
+        const message = msg.messages[0];
+        if (!message.message) return;
+
+        const sender = message.key.remoteJid;
+        const text = message.message.conversation || message.message.extendedTextMessage?.text;
+
+        console.log(`📩 Mensagem de ${sender}: ${text}`);
+
+        if (text === '!ping') {
+            sock.sendMessage(sender, { text: 'pong 🏓' });
+        }
+    });
+
+    // Salvar credenciais ao alterar
+    sock.ev.on('creds.update', saveCreds);
+
+    return sock;
+}
+
+startSock();
