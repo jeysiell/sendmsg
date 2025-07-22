@@ -1,16 +1,17 @@
 {
   "name": "sendmsg",
   "version": "1.0.0",
-  "main": "sendmessage.js",
+  "description": "Envio de mensagens via WhatsApp com Baileys",
+  "main": "start.js",
   "scripts": {
-    "start": "node start.js"
+    "start": "node whatsapp.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": ["whatsapp", "baileys", "mensagem", "automação"],
+  "author": "Seu Nome",
+  "license": "MIT",
   "dependencies": {
+    "@whiskeysockets/baileys": "^6.6.0",
     "qrcode-terminal": "^0.12.0",
-    "whatsapp-web.js": "^1.31.0"
+    "@hapi/boom": "^10.0.1"
   }
 }
