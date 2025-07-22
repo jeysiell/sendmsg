@@ -3,6 +3,7 @@ const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = requi
 const fs = require('fs');
 const qrcode = require('qrcode-terminal'); // Adicione esta dependência
 
+
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
 
