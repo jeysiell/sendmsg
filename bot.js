@@ -1,37 +1,55 @@
 // bot.js
-const { WAConnection, MessageType } = require('@adiwajshing/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('baileys');
 const fs = require('fs');
+const qrcode = require('qrcode-terminal'); // Adicione esta dependência
 
 async function startBot() {
-    const conn = new WAConnection();
+    const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
 
-    // Carregar sessão se existir
-    if (fs.existsSync('./session.json')) {
-        conn.loadAuthInfo('./session.json');
-    }
+    const conn = makeWASocket({
+        auth: state,
+    });
 
-    // Conectar ao WhatsApp
-    await conn.connect();
+    conn.ev.on('creds.update', saveCreds);
 
-    // Salvar sessão
-    fs.writeFileSync('./session.json', JSON.stringify(conn.base64EncodedAuthInfo(), null, '\t'));
+    // Evento para verificar a conexão e exibir o QR
+    conn.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect, qr } = update;
 
-    console.log('Bot conectado!');
+        if (qr) {
+            console.log('📱 Escaneie o QR Code abaixo para conectar:');
+            qrcode.generate(qr, { small: true });
+        }
 
-    // Enviar mensagem
-    const sendVerificationCode = async (phoneNumber, code) => {
-        const chatId = `${phoneNumber}@c.us`; // Formato do ID do chat
-        const message = `Seu código de verificação é: ${code}`;
-        
-        await conn.sendMessage(chatId, message, MessageType.text);
-        console.log(`Código enviado para ${phoneNumber}: ${code}`);
-    };
+        if (connection === 'close') {
+            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            console.log('Conexão fechada. Reconectando?', shouldReconnect);
+            if (shouldReconnect) startBot();
+        }
 
-    // Exemplo de uso
-    const phoneNumber = '5599999999999'; // Substitua pelo número de telefone desejado
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // Gera um código de 6 dígitos
-    await sendVerificationCode(phoneNumber, verificationCode);
+        if (connection === 'open') {
+            console.log('✅ Bot conectado!');
+
+            const phoneNumber = '5586995590259'; // Substitua pelo número de telefone desejado
+            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // Código de 6 dígitos
+
+            await sendVerificationCode(conn, phoneNumber, verificationCode);
+        }
+    });
 }
+
+// Função para enviar o código de verificação
+const sendVerificationCode = async (conn, phoneNumber, code) => {
+    const chatId = `${phoneNumber}@s.whatsapp.net`;
+    const message = `Seu código de verificação é: ${code}`;
+
+    try {
+        await conn.sendMessage(chatId, { text: message });
+        console.log(`📨 Código enviado para ${phoneNumber}: ${code}`);
+    } catch (error) {
+        console.error('❌ Erro ao enviar mensagem:', error);
+    }
+};
 
 // Iniciar o bot
 startBot().catch(err => console.error('Erro ao iniciar o bot:', err));
