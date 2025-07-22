@@ -1,5 +1,5 @@
 // whatsapp/sendMessage.js
-const client = require('./whatsapp');
+const client = require('../whatsapp');
 
 async function sendWhatsAppMessage(phoneNumber, message) {
     try {
