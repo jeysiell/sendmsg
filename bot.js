@@ -1,19 +1,23 @@
-// bot.js
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('baileys');
+const express = require('express');
+const qrcode = require('qrcode-terminal');
 const fs = require('fs');
-const qrcode = require('qrcode-terminal'); // Adicione esta dependência
 
+const app = express();
+app.use(express.json());
 
+let conn = null; // para reutilizar a conexão fora do startBot
+
+// Iniciar o bot
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
 
-    const conn = makeWASocket({
+    conn = makeWASocket({
         auth: state,
     });
 
     conn.ev.on('creds.update', saveCreds);
 
-    // Evento para verificar a conexão e exibir o QR
     conn.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
@@ -30,27 +34,37 @@ async function startBot() {
 
         if (connection === 'open') {
             console.log('✅ Bot conectado!');
-
-            const phoneNumber = '5586995590259'; // Substitua pelo número de telefone desejado
-            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // Código de 6 dígitos
-
-            await sendVerificationCode(conn, phoneNumber, verificationCode);
         }
     });
 }
 
-// Função para enviar o código de verificação
-const sendVerificationCode = async (conn, phoneNumber, code) => {
-    const chatId = `${phoneNumber}@s.whatsapp.net`;
-    const message = `Seu código de verificação é: ${code}`;
+// Rota HTTP para envio de mensagens
+app.post('/send', async (req, res) => {
+    const { telefone, mensagem } = req.body;
+
+    if (!conn || !conn.sendMessage) {
+        return res.status(503).json({ error: 'Bot não está conectado ao WhatsApp.' });
+    }
+
+    if (!telefone || !mensagem) {
+        return res.status(400).json({ error: 'Telefone e mensagem são obrigatórios.' });
+    }
+
+    const chatId = `${telefone}@s.whatsapp.net`;
 
     try {
-        await conn.sendMessage(chatId, { text: message });
-        console.log(`📨 Código enviado para ${phoneNumber}: ${code}`);
-    } catch (error) {
-        console.error('❌ Erro ao enviar mensagem:', error);
+        await conn.sendMessage(chatId, { text: mensagem });
+        console.log(`📨 Mensagem enviada para ${telefone}: ${mensagem}`);
+        res.json({ status: 'Mensagem enviada com sucesso' });
+    } catch (err) {
+        console.error('Erro ao enviar mensagem:', err);
+        res.status(500).json({ error: 'Erro ao enviar mensagem' });
     }
-};
+});
 
-// Iniciar o bot
-startBot().catch(err => console.error('Erro ao iniciar o bot:', err));
+// Iniciar Express e o bot
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`🌐 Servidor do bot escutando na porta ${PORT}`);
+    startBot().catch(err => console.error('Erro ao iniciar o bot:', err));
+});
