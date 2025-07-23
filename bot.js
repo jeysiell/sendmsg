@@ -1,20 +1,18 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('baileys');
 const express = require('express');
 const qrcode = require('qrcode-terminal');
-const fs = require('fs');
-
+const fs = require('fs-extra'); // substituído para permitir remoção recursiva
 const app = express();
 app.use(express.json());
 
-let conn = null; // conexão WhatsApp
+let conn = null;
+let isBotReady = false; // controle de prontidão do bot
 
 // Iniciar o bot
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
 
-    conn = makeWASocket({
-        auth: state,
-    });
+    conn = makeWASocket({ auth: state });
 
     conn.ev.on('creds.update', saveCreds);
 
@@ -27,23 +25,25 @@ async function startBot() {
         }
 
         if (connection === 'close') {
+            isBotReady = false;
             const reasonCode = lastDisconnect?.error?.output?.statusCode;
             const shouldReconnect = reasonCode !== DisconnectReason.loggedOut;
 
             console.log('❌ Conexão fechada. Código:', reasonCode, '| Reconectando?', shouldReconnect);
 
             if (shouldReconnect) {
-                // aguarda 3 segundos antes de tentar reconectar
                 setTimeout(() => {
                     console.log('🔄 Tentando reconectar...');
                     startBot().catch(err => console.error('Erro ao reconectar:', err));
                 }, 3000);
             } else {
-                console.log('🔒 Sessão expirada. Delete a pasta auth_info e escaneie novamente.');
+                console.log('🔒 Sessão expirada. Limpando auth_info...');
+                await fs.remove('./auth_info');
             }
         }
 
         if (connection === 'open') {
+            isBotReady = true;
             console.log('✅ Bot conectado!');
         }
     });
@@ -57,7 +57,7 @@ async function startBot() {
 app.post('/send', async (req, res) => {
     const { telefone, mensagem } = req.body;
 
-    if (!conn || typeof conn.sendMessage !== 'function') {
+    if (!isBotReady || !conn || typeof conn.sendMessage !== 'function') {
         return res.status(503).json({ error: 'Bot está reconectando. Tente novamente em alguns segundos.' });
     }
 
@@ -76,7 +76,6 @@ app.post('/send', async (req, res) => {
         res.status(500).json({ error: 'Erro ao enviar mensagem' });
     }
 });
-
 
 // Iniciar servidor Express e o bot
 const PORT = process.env.PORT || 3000;
