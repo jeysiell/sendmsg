@@ -6,7 +6,7 @@ const fs = require('fs');
 const app = express();
 app.use(express.json());
 
-let conn = null; // para reutilizar a conexão fora do startBot
+let conn = null; // conexão WhatsApp
 
 // Iniciar o bot
 async function startBot() {
@@ -27,14 +27,29 @@ async function startBot() {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('Conexão fechada. Reconectando?', shouldReconnect);
-            if (shouldReconnect) startBot();
+            const reasonCode = lastDisconnect?.error?.output?.statusCode;
+            const shouldReconnect = reasonCode !== DisconnectReason.loggedOut;
+
+            console.log('❌ Conexão fechada. Código:', reasonCode, '| Reconectando?', shouldReconnect);
+
+            if (shouldReconnect) {
+                // aguarda 3 segundos antes de tentar reconectar
+                setTimeout(() => {
+                    console.log('🔄 Tentando reconectar...');
+                    startBot().catch(err => console.error('Erro ao reconectar:', err));
+                }, 3000);
+            } else {
+                console.log('🔒 Sessão expirada. Delete a pasta auth_info e escaneie novamente.');
+            }
         }
 
         if (connection === 'open') {
             console.log('✅ Bot conectado!');
         }
+    });
+
+    conn.ev.on('connection.set', () => {
+        console.log('📡 Conexão com servidor WhatsApp estabelecida.');
     });
 }
 
@@ -42,8 +57,8 @@ async function startBot() {
 app.post('/send', async (req, res) => {
     const { telefone, mensagem } = req.body;
 
-    if (!conn || !conn.sendMessage) {
-        return res.status(503).json({ error: 'Bot não está conectado ao WhatsApp.' });
+    if (!conn || typeof conn.sendMessage !== 'function') {
+        return res.status(503).json({ error: 'Bot está reconectando. Tente novamente em alguns segundos.' });
     }
 
     if (!telefone || !mensagem) {
@@ -57,12 +72,12 @@ app.post('/send', async (req, res) => {
         console.log(`📨 Mensagem enviada para ${telefone}: ${mensagem}`);
         res.json({ status: 'Mensagem enviada com sucesso' });
     } catch (err) {
-        console.error('Erro ao enviar mensagem:', err);
+        console.error('❌ Erro ao enviar mensagem:', err);
         res.status(500).json({ error: 'Erro ao enviar mensagem' });
     }
 });
 
-// Iniciar Express e o bot
+// Iniciar servidor Express e o bot
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🌐 Servidor do bot escutando na porta ${PORT}`);
