@@ -2,7 +2,7 @@ const fs = require("fs");
 const { Connect } = require("./connection");
 const handleCommand = require("./config/commands");
 const sharp = require('sharp');
-require('./server'); // inicia o servidor web para Render
+
 
 
 const {
