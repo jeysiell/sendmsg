@@ -1,5 +1,7 @@
 const fs = require('fs');
 const { Connect } = require("./connection");
+const handleCommand = require('./commands'); 
+
 
 const {
     fazerBotResponderSomenteDono,
@@ -12,6 +14,7 @@ const { verificarSeEhDono,
     verificarSeEhGrupo,
     verificarSeEhComando
 } = require("./functions");
+const { env } = require('process');
 
 async function MdevStartBot() {
     const mdevbot = await Connect();
@@ -61,26 +64,9 @@ async function MdevStartBot() {
                 case 'ping':
                     enviar('Pong🏓');
                     break
-                case 'menu':
-                    let img = pastaDeImagens('banner.png');
-                    let legenda = `
-╭━━⪩ *BEM VINDO(A)* ⪨━━
-┃ *BOT:* ${nomeBot}
-┃ *DONO:* ${nomeDono}
-┃ *USUÁRIO:* ${pushName}
-╰━━─「〘⚡〙」─━━
-
-╭━━⪩ COMANDOS ATIVOS ⪨━━
-┃╭━━─ ≪ •❈• ≫ ─━━╮
-┃╎${prefixo}ping
-┃╰━━─ ≪ •❈• ≫ ─━━╯
-
-> Base ${nomeBot}
-`;
-                    enviarImagemDePasta(img, legenda);
+                case 'oi': 
+                    enviar('Olá')
                     break
-                default:
-                    enviar('Comando inválido! Acesse meu menu de comandos\n\n> ' + prefixo + 'menu')
             }
         }
     })

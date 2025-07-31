@@ -14,7 +14,7 @@ const CFonts = require('cfonts');
 async function Connect() {
 
     console.clear();
-    console.log("\x1b[1;33;42m Iniciando Conexão do M'Dev-Bot \x1b[m")
+    console.log("\x1b[1;33;42m Iniciando Conexão do Jarvis \x1b[m")
 
     const { state, saveCreds } = await useMultiFileAuthState(pastaParaSalvarSessao);
 
@@ -58,7 +58,7 @@ async function Connect() {
     bot.ev.on("creds.update", saveCreds);
 
 
-    CFonts.say("M'DEV|BASE", {
+    CFonts.say("JARVIS", {
         font: 'block',
         align: 'center',
         colors: ['green', 'yellow'],
@@ -70,7 +70,7 @@ async function Connect() {
         gradient: true
     });
 
-    console.log("\x1b[1;32m O Bot Está Pronto!! \x1b[m")
+    console.log("\x1b[1;32m O Jarvis Está Pronto!! \x1b[m")
 
     return bot;
 }
