@@ -5,7 +5,8 @@ const {
     default: makeWASocket,
     useMultiFileAuthState,
     fetchLatestBaileysVersion,
-    DisconnectReason
+    DisconnectReason,
+    downloadMediaMessage
 } = require("baileys");
 
 const pino = require('pino');
