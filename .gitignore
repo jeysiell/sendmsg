@@ -1,1 +1,3 @@
 assets/qrcode
+node_modules
+.env
