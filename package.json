@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "reset": "node src/reset.js"
+    "reset": "node src/reset.js",
+    "postinstall": "npm install --platform=linux --arch=x64 sharp"
   },
   "repository": {
     "type": "git",

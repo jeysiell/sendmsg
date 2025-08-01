@@ -1,17 +1,13 @@
-FROM node:18
+FROM node:18-bullseye
 
-# Instala python3 e pip
-RUN apt-get update && apt-get install -y python3 python3-pip
+# Instalar dependências de build necessárias para o sharp
+RUN apt-get update && apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev python3
 
-# Instala dependências Python
-COPY requirements.txt .
-RUN pip3 install -r requirements.txt
+WORKDIR /app
 
-# Copia todo o projeto
-COPY . .
-
-# Instala dependências Node.js
+COPY package*.json ./
 RUN npm install
 
-# Comando para rodar seu bot
-CMD ["npm", "start"]
+COPY . .
+
+CMD ["node", "src/index.js"]
