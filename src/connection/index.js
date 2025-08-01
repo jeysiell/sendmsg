@@ -1,6 +1,7 @@
 const { isMostrarQrcode, pastaParaSalvarSessao } = require("../config");
 const { InputText } = require("../functions");
 
+
 const {
     default: makeWASocket,
     useMultiFileAuthState,

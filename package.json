@@ -8,7 +8,6 @@
     "reset": "node src/reset.js"
   },
   "repository": {
-    "type": "git",
     "url": "base-mdev-md"
   },
   "keywords": [
@@ -30,4 +29,5 @@
   "engines": {
     "node": "18.x"
   }
+  
 }
